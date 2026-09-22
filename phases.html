@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Galami Labs — Three phases</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --ink:#161412; --muted:#5d5852; --line:#e4dfd6; --bg:#f6f1e8; --accent:#2c4a3a; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Source Sans 3', system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+    header { padding: 1.5rem 1.25rem 0; max-width: 820px; margin: 0 auto; }
+    .mark { font-family: Fraunces, serif; }
+    h1 { font-family: Fraunces, serif; font-size: clamp(2rem, 5vw, 3.1rem); letter-spacing: -0.03em; margin: 1.4rem 0 0.6rem; }
+    .lead { color: var(--muted); max-width: 36rem; line-height: 1.55; }
+    .diagram { display: grid; gap: 0.7rem; margin: 2.2rem auto 1.6rem; max-width: 820px; padding: 0 1.25rem; }
+    @media (min-width: 720px) { .diagram { grid-template-columns: 1fr auto 1fr auto 1fr; } }
+    .phase { background: #fff; border: 1px solid var(--line); padding: 1.15rem 1.1rem 1.25rem; min-height: 150px; }
+    .phase strong { display: block; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.45rem; }
+    .phase h2 { font-family: Fraunces, serif; font-size: 1.25rem; margin-bottom: 0.4rem; }
+    .arrow { display: none; }
+    @media (min-width: 720px) { .arrow { display: grid; place-items: center; color: #b3aa9c; font-size: 1.4rem; } }
+    .control { position: sticky; bottom: 0; background: rgba(246,241,232,0.94); border-top: 1px solid var(--line); padding: 1rem 1.25rem 1.25rem; }
+    .wrap { max-width: 820px; margin: 0 auto; }
+    label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.45rem; }
+    input[type=range] { width: 100%; accent-color: var(--accent); }
+    .essay { max-width: 820px; margin: 0 auto; padding: 0 1.25rem 6.5rem; color: var(--muted); line-height: 1.65; }
+    .essay p + p { margin-top: 0.85rem; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="mark">Galami Labs</p>
+    <h1>Three phases. One workshop.</h1>
+    <p class="lead">A simple plan I can send to people who do not have time. Move the slider for more or less detail.</p>
+  </header>
+  <div class="diagram">
+    <article class="phase"><strong>Phase 01</strong><h2>Agentic AI</h2><p data-short="Learn how AI agents do real work." data-long="Spend focused months using agent tools on real tasks: research, drafting, follow-up, and small operations. The goal is fluency, not a course certificate."></p></article>
+    <div class="arrow">→</div>
+    <article class="phase"><strong>Phase 02</strong><h2>Build with AI</h2><p data-short="Learn to ship software and SaaS with AI." data-long="Turn that fluency into products: small SaaS tools, internal systems, and public experiments. Ship, measure, keep or stop."></p></article>
+    <div class="arrow">→</div>
+    <article class="phase"><strong>Phase 03</strong><h2>Consultancy</h2><p data-short="Launch an AI solutions practice." data-long="Offer AI solutions to operators I already know — procurement, retail, and founders who need working systems, not slides."></p></article>
+  </div>
+  <section class="essay" id="essay"></section>
+  <div class="control"><div class="wrap"><label><span>Short</span><span>Full detail</span></label><input id="detail" type="range" min="0" max="100" value="18" /></div></div>
+  <script>
+    const shortEssay = "Phase one is learning agentic AI. Phase two is learning to build software and SaaS with AI. Phase three is a consultancy that provides AI solutions.";
+    const midEssay = "I am launching Galami Labs from Zug as a workshop, not a finished portfolio. First I train on agentic AI until I can run real workflows. Then I use that skill to build small software products. Then I sell the working method as a consultancy to operators I already know.";
+    const longEssay = "Galami Labs is the name of the workshop. Gruyters Ventures is the company behind it. I graduated from Kellogg in June 2026 and moved back to Switzerland in September. The same month I attended the AI Festival in Zurich. The lab is the next step: a public place to show the plan to people in my network who do not have time for a long email.\n\nPhase one is discipline. I will use agent tools every day on research, writing, outreach, and operations until the workflow is boring. Phase two is product. I will ship small SaaS and software experiments and keep only what people use. Phase three is the practice. I will offer AI solutions to operators, starting with procurement and retail.\n\nThe point of the three steps is honesty. I am not selling a finished platform today. I am showing the path, the order of work, and the standard I will use to stop an idea that does not earn its place.";
+    const paras = document.querySelectorAll('.phase p');
+    const essay = document.getElementById('essay');
+    const slider = document.getElementById('detail');
+    function render(v) {
+      const t = v / 100;
+      paras.forEach(p => { p.textContent = t < 0.45 ? p.dataset.short : p.dataset.long; });
+      let text = shortEssay;
+      if (t >= 0.33 && t < 0.7) text = midEssay;
+      if (t >= 0.7) text = longEssay;
+      essay.innerHTML = text.split(/\n\n/).map(x => '<p>'+x+'</p>').join('');
+    }
+    slider.addEventListener('input', e => render(e.target.value));
+    render(slider.value);
+  </script>
+  <p style="text-align:center;padding:0 1rem 5.5rem;color:#8a8378;font-size:.85rem"><a href="index.html">All three versions</a></p>
+</body>
+</html>
