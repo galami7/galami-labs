@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Galami Labs — slinky draft</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --ink:#111; --muted:#5c5c5c; --bg:#f4f2ee; --skin:#c48a68; --skin2:#a86c4e; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'Source Sans 3', system-ui, sans-serif; overflow: hidden; }
+    .frame { position: relative; width: 100%; height: 100dvh; }
+    .portrait {
+      position: absolute; left: 6vw; bottom: 0;
+      height: min(92dvh, 920px); width: auto;
+      object-fit: contain; pointer-events: none;
+      mix-blend-mode: multiply; user-select: none;
+    }
+    canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+    .copy {
+      position: absolute; right: 7vw; top: 50%;
+      transform: translateY(-50%);
+      max-width: 22rem; z-index: 2; pointer-events: none;
+    }
+    .copy p.mark { font-family: Fraunces, Georgia, serif; font-size: 1rem; margin-bottom: 0.6rem; }
+    .copy h1 { font-family: Fraunces, Georgia, serif; font-size: clamp(2rem, 4vw, 3.1rem); letter-spacing: -0.03em; line-height: 1.05; }
+    .copy .hint { margin-top: 1rem; color: var(--muted); font-size: 0.95rem; line-height: 1.5; }
+    .back { position: absolute; top: 1.25rem; left: 1.25rem; z-index: 3; color: #888; text-decoration: none; font-size: 0.85rem; }
+    .back:hover { color: #111; }
+    @media (max-width: 800px) {
+      .portrait { left: 50%; transform: translateX(-50%); height: 70dvh; }
+      .copy { right: auto; left: 1.25rem; top: 4.2rem; transform: none; max-width: 16rem; }
+      .copy h1 { font-size: 1.7rem; }
+    }
+  </style>
+</head>
+<body>
+  <a class="back" href="index.html">← Galami Labs</a>
+  <div class="frame">
+    <img class="portrait" id="body" alt="Guillaume Gruyters" src="https://raw.githubusercontent.com/galami7/personal_website/main/assets/avatar_default.jpg" />
+    <canvas id="arm"></canvas>
+    <div class="copy">
+      <p class="mark">Galami Labs</p>
+      <h1>Move the pointer.</h1>
+      <p class="hint">Draft. The hand follows you; the arm is a spring chain. On a phone it sways on its own.</p>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById('arm');
+    const ctx = canvas.getContext('2d');
+    const body = document.getElementById('body');
+    const N = 14;
+    const points = [];
+    const mouse = { x: 0, y: 0, has: false };
+    let rest = { x: 0, y: 0 };
+
+    function size() {
+      canvas.width = window.innerWidth * devicePixelRatio;
+      canvas.height = window.innerHeight * devicePixelRatio;
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    }
+    size();
+    window.addEventListener('resize', size);
+
+    function shoulder() {
+      const r = body.getBoundingClientRect();
+      return {
+        x: r.left + r.width * 0.36,
+        y: r.top + r.height * 0.265
+      };
+    }
+
+    function resetChain() {
+      const s = shoulder();
+      rest = { x: s.x + 18, y: s.y + 210 };
+      points.length = 0;
+      for (let i = 0; i < N; i++) {
+        const t = i / (N - 1);
+        points.push({
+          x: s.x + (rest.x - s.x) * t,
+          y: s.y + (rest.y - s.y) * t,
+          ox: s.x + (rest.x - s.x) * t,
+          oy: s.y + (rest.y - s.y) * t
+        });
+      }
+    }
+    body.addEventListener('load', resetChain);
+    if (body.complete) resetChain();
+    window.addEventListener('resize', resetChain);
+
+    window.addEventListener('pointermove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+      mouse.has = true;
+    });
+    window.addEventListener('pointerleave', () => { mouse.has = false; });
+
+    function tick() {
+      if (!points.length) { requestAnimationFrame(tick); return; }
+      const s = shoulder();
+      const target = mouse.has
+        ? { x: mouse.x, y: mouse.y }
+        : {
+            x: rest.x + Math.sin(Date.now() / 900) * 18,
+            y: rest.y + Math.cos(Date.now() / 1100) * 10
+          };
+
+      const last = points[N - 1];
+      last.x += (target.x - last.x) * 0.28;
+      last.y += (target.y - last.y) * 0.28;
+
+      for (let i = 0; i < N; i++) {
+        const p = points[i];
+        const vx = p.x - p.ox;
+        const vy = p.y - p.oy;
+        p.ox = p.x;
+        p.oy = p.y;
+        p.x += vx * 0.86;
+        p.y += vy * 0.86 + 0.35;
+      }
+
+      points[0].x = s.x;
+      points[0].y = s.y;
+      points[0].ox = s.x;
+      points[0].oy = s.y;
+
+      const restLen = 18;
+      for (let k = 0; k < 4; k++) {
+        for (let i = 0; i < N - 1; i++) {
+          const a = points[i];
+          const b = points[i + 1];
+          let dx = b.x - a.x;
+          let dy = b.y - a.y;
+          const d = Math.hypot(dx, dy) || 0.0001;
+          const diff = (d - restLen) / d * 0.5;
+          if (i === 0) {
+            b.x -= dx * diff * 2;
+            b.y -= dy * diff * 2;
+          } else {
+            a.x += dx * diff;
+            a.y += dy * diff;
+            b.x -= dx * diff;
+            b.y -= dy * diff;
+          }
+        }
+        points[0].x = s.x;
+        points[0].y = s.y;
+      }
+
+      const maxReach = 280;
+      const tip = points[N - 1];
+      let rx = tip.x - s.x, ry = tip.y - s.y;
+      const reach = Math.hypot(rx, ry);
+      if (reach > maxReach) {
+        const sc = maxReach / reach;
+        const wantX = s.x + rx * sc;
+        const wantY = s.y + ry * sc;
+        tip.x += (wantX - tip.x) * 0.5;
+        tip.y += (wantY - tip.y) * 0.5;
+      }
+
+      draw();
+      requestAnimationFrame(tick);
+    }
+
+    function draw() {
+      const w = canvas.width / devicePixelRatio;
+      const h = canvas.height / devicePixelRatio;
+      ctx.clearRect(0, 0, w, h);
+      if (points.length < 2) return;
+
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#c48a68';
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < N - 1; i++) {
+        const n = points[i + 1];
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.lineWidth = 26;
+      ctx.stroke();
+
+      ctx.strokeStyle = '#d4a07c';
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < N; i++) ctx.lineTo(points[i].x, points[i].y);
+      ctx.lineWidth = 16;
+      ctx.stroke();
+
+      const a = points[N - 2];
+      const b = points[N - 1];
+      const ang = Math.atan2(b.y - a.y, b.x - a.x);
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(ang);
+      ctx.fillStyle = '#c48a68';
+      ctx.beginPath();
+      ctx.ellipse(10, 0, 22, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#b87d5a';
+      for (let f = -2; f <= 2; f++) {
+        ctx.beginPath();
+        ctx.ellipse(26, f * 5.2, 8, 3.1, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
